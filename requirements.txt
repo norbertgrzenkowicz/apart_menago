@@ -1,0 +1,6 @@
+lxml
+bs4
+requests
+openpyxl
+argcomplete
+pandas
