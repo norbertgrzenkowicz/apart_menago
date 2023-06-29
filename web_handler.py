@@ -1,15 +1,12 @@
 #! /usr/bin/env python3.6
 import argparse
 import argcomplete
-from argcomplete.completers import ChoicesCompleter
-from argcomplete.completers import EnvironCompleter
 import requests
 import datetime
-# from bthread import BookingThread
 from bs4 import BeautifulSoup
-# from file_writer import FileWriter
 import pandas as pd
 import calendar
+from re import search
 
 
 def valid_date(given_date):
@@ -38,7 +35,32 @@ def default_end_date():
         raise argparse.ArgumentError(e, msg)
 
 
-def get_booking_page(rooms, people, startdate, enddate):
+def find_weekend(month):
+
+    dates = []
+    if month == 0:
+        start = str(default_start_date()).split(" ")[0]
+        end = "2023-09-30"
+    else:
+        start = "2023-0{month}-01".format(month=month),
+        end = "2023-0{month}-30".format(month=month)
+        start = "2023-07-01"
+        end = "2023-07-30"
+
+    for i in pd.date_range(
+            start=start,
+            end=end):
+        ind = i.to_pydatetime()
+        if ind.weekday() == 4:
+            dates.append(i)
+        elif ind.weekday() == 6 and dates:
+            dates.append(i)
+
+    print(dates)
+    return dates
+
+
+def get_booking_page(city, rooms, people, startdate, enddate, offset):
     """
     Make request to booking page and parse html
     :param offset:
@@ -48,7 +70,7 @@ def get_booking_page(rooms, people, startdate, enddate):
         "https://www.booking.com/searchresults.pl.html?"
         "ss={city}&"
         "ssne={city}&"
-        "ssne_untouched={city}&"  # W%C5%82adys%C5%82awowo&
+        "ssne_untouched={city}&"
         "label=gen173nr-1BCAEoggI46AdIM1gEaLYBiAEBmAEeuAEXyAEM2AEB6AEBiAIBqAIDuAKVrsikBsACAdICJGRjNGFhMGUzLTk0ZjEtNDA4MS05YjkzLWIyZmEzYTMxMWFkNtgCBeACAQ&"
         "aid=304142&"
         "lang=pl&"
@@ -64,13 +86,15 @@ def get_booking_page(rooms, people, startdate, enddate):
         "group_adults={people}&"
         "no_rooms={rooms}&"
         "group_children=0&"
-        "nflt=review_score%3D90"
+        "nflt=review_score%3D90&"
+        "offset={offset}"
         .format(
-            city="W%C5%82adys%C5%82awowo",
+            city=city,
             people=people,
             rooms=rooms,
             startdate=str(startdate).split(" ")[0],
-            enddate=str(enddate).split(" ")[0]
+            enddate=str(enddate).split(" ")[0],
+            offset=offset
         ))
     r = requests.get(
         url,
@@ -85,72 +109,105 @@ def get_booking_page(rooms, people, startdate, enddate):
 
 
 def prep_data(
+    city="W%C5%82adys%C5%82awowo",
     rooms=1,
     people=2,
     start_date=default_start_date(),
     end_date=default_end_date(),
-    timeofstay=2
+    timeofstay=2,
+    offset=0
 ):
     """
     Prepare data for saving
-    :return: hotels: set()
+    :return: pd.DataFrame
     """
-    # offset: int = 15
-    # session = requests.Session()
+    print("ILEE", timeofstay)
     print("prep_data", start_date, end_date)
     parsed_html = get_booking_page(
-        rooms, people, start_date, end_date
+        city, rooms, people, start_date, end_date, offset
     )
 
-    scrapped_data = [[], [], []]
+    pages = parsed_html.find_all(
+        "div", {"data-testid": "pagination"})
+    print(pages[0].previous_sibling.string)
+    count = int(search(r'\d+', pages[0].previous_sibling.string).group())
 
-    prices = parsed_html.find_all(
-        "span", {"data-testid": "price-and-discounted-price"})
+    i = 0
+    offsets = [0]
+    df_list = []
 
-    for price in prices:
-        scrapped_data[0].append(
-            ''.join(x for x in price.string if x.isdigit()))
+    while (i+25 < count and i < 75):
+        i += 25
+        offsets.append(i)
 
-    for title in parsed_html.find_all("div", {"data-testid": "title"}):
-        if title.string is not None:
-            scrapped_data[1].append(title.string)
+    for offset in offsets:
+        # scrapped_data = [[], [], []]
+        print("offset:", offset)
+        parsed_html = get_booking_page(
+            city, rooms, people, start_date, end_date, offset
+        )
 
-    for grade in parsed_html.find_all("div", {"data-testid": "review-score"}):
-        if grade.next_element.string is not None:
-            scrapped_data[2].append(
-                grade.next_element.string.replace(",", "."))
+        prices = parsed_html.find_all(
+            "span", {"data-testid": "price-and-discounted-price"})
 
-    data = {
-        "Hotel": scrapped_data[1],
-        "Price": scrapped_data[0],
-        "Onenight Price": [int(x) // timeofstay for x in scrapped_data[0]],
-        "Start date": start_date,
-        "End date": end_date,
-        "Nights": timeofstay,
-        "Grade": scrapped_data[2],
-        "People": people,
-        "Rooms": rooms
-    }
+        prices_ = pd.Series(''.join(x for x in price.string if x.isdigit())
+                            for price in prices)
 
-    df = pd.DataFrame(data)
-    df["Grade"] = pd.to_numeric(df["Grade"], downcast="float")
-    df["Price"] = pd.to_numeric(df["Price"], downcast="unsigned")
+        titles_ = pd.Series(
+            title.string for title in parsed_html.find_all(
+                "div", {"data-testid": "title"}))
+
+        scores_ = pd.Series(grade.next_element.string.replace(",", ".")
+                            for grade in parsed_html.find_all(
+            "div",
+            {"data-testid": "review-score"}))
+
+        data = {
+            "Hotel": titles_,
+            "Price": prices_,
+            "Onenight Price": [int(x) // timeofstay for x in prices_],
+            "Start date": start_date,
+            "End date": end_date,
+            "Nights": timeofstay,
+            "Grade": scores_,
+            "People": people,
+            "Rooms": rooms,
+            "Page": offset // 25 + 1
+        }
+
+        # if len(scrapped_data[0]) > len(scrapped_data[2]):
+        #     scrapped_data[2].append("9.0")
+        # print(len(scrapped_data[1]), len(
+        #     scrapped_data[0]), len(scrapped_data[2]))
+        data = pd.DataFrame(data)
+        print(data)
+        data["Grade"] = pd.to_numeric(data["Grade"], downcast="float")
+        data["Price"] = pd.to_numeric(data["Price"], downcast="unsigned")
+
+        df_list.append(data)
+
+    df = pd.concat(df_list, axis=0, ignore_index=True)
     return df
 
 
 def get_data(
+    city="W%C5%82adys%C5%82awowo",
     rooms=1,
     people=2,
     start_date=default_start_date(),
     end_date=default_end_date(),
     month=0,
-    timeofstay=2
+    timeofstay=2,
+    save=False,
+    weekend=False
 ):
     """
     Get all accomodations in Pooland and save them in file
-    :return: hotels-in-macedonia.{txt/csv/xlsx} file
+    :return: month.xlsx file
     """
-    print("Pokoje ze śniadaniami")
+    start_date = str(start_date).split(" ")[0]
+    end_date = str(end_date).split(" ")[0]
+    print("Pokoje ze śniadaniami w ", city)
     print("Liczba pokoi ", rooms)
     print("Liczba osób dorosłych: ", people)
     print("Od: ", start_date)
@@ -158,11 +215,20 @@ def get_data(
     print("Miesiac: ", calendar.month_name[month])
     print("Ilość nocy: ", timeofstay)
 
-    if month == 0 and start_date == default_start_date():
+    if weekend:
+        datetime_series2 = pd.Series(find_weekend(month))
+        it = iter(datetime_series2)
+        datetime_series2 = pd.Series([*zip(it, it)])
+
+        print(datetime_series2)
+
+    elif month == 0:
         datetime_series = pd.Series(
-            pd.date_range("2023-07-01", periods=3, freq="M"))
+            pd.date_range(start_date, periods=1, freq="M"))
+        print(datetime_series)
         datetime_series2 = pd.Series(
-            pd.date_range("2023-07-01", end=datetime_series[2],
+            pd.date_range(start_date,
+                          end=end_date,
                           freq="{timeofstay}D".format(timeofstay=timeofstay)))
     elif month != 0:
         datetime_series = pd.Series(
@@ -171,24 +237,44 @@ def get_data(
             pd.date_range("2023-{month}-01".format(month=month), end=datetime_series[0],
                           freq="{timeofstay}D".format(timeofstay=timeofstay)))
 
-    i = 0
     list_of_dfs = []
-    while i + 1 < len(datetime_series2) - 1:
-        list_of_dfs.append(prep_data(rooms=rooms, people=people,
-                                     start_date=datetime_series2[i],
-                                     end_date=datetime_series2[i+1],
-                                     timeofstay=timeofstay))
-        i += 1
+    if weekend:
+        for elem in datetime_series2:
+            start_date, end_date = elem[0], elem[1]
+            list_of_dfs.append(prep_data(city=city, rooms=rooms, people=people,
+                                         start_date=start_date,
+                                         end_date=end_date,
+                                         timeofstay=timeofstay,
+                                         offset=0))
+    else:
+        for i in range(1, len(datetime_series2)):
+            start_date, end_date = datetime_series2[i-1], datetime_series2[i]
+            list_of_dfs.append(prep_data(city=city, rooms=rooms, people=people,
+                                         start_date=start_date,
+                                         end_date=end_date,
+                                         timeofstay=timeofstay,
+                                         offset=0))
 
     list_of_dfs = pd.concat(list_of_dfs, axis=0, ignore_index=True)
 
-    pd.DataFrame(list_of_dfs).to_excel(
-        calendar.month_name[month] + ".xlsx")
+    if save:
+        pd.DataFrame(list_of_dfs).to_excel(
+            calendar.month_name[month] + ".xlsx")
+    else:
+        print(list_of_dfs)
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
 
+    parser.add_argument(
+        "-c",
+        "--city",
+        help="Define name of the scrapped city.",
+        default="W%C5%82adys%C5%82awowo&",
+        type=str,
+        nargs="?",
+    )
     parser.add_argument(
         "-r",
         "--rooms",
@@ -230,10 +316,23 @@ if __name__ == "__main__":
         "-tos",
         "--timeofstay",
         help="Low many nights you want to stay",
-        default=4,
+        default=2,
         type=int,
+    )
+    parser.add_argument(
+        "--save",
+        help="Saves output to xlsx file",
+        default=False,
+        type=bool,
+    )
+    parser.add_argument(
+        "--weekend",
+        help="Output only weekend times",
+        default=False,
+        type=bool,
     )
     argcomplete.autocomplete(parser)
     args = parser.parse_args()
-    get_data(args.rooms, args.people,
-             args.startdate, args.enddate, args.month, args.timeofstay)
+    get_data(args.city, args.rooms, args.people,
+             args.startdate, args.enddate, args.month, args.timeofstay, args.save,
+             args.weekend)
