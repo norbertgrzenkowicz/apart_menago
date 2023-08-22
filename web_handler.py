@@ -7,32 +7,8 @@ from bs4 import BeautifulSoup
 import pandas as pd
 import calendar
 from re import search
+from date_funcs import valid_date, default_start_date, default_end_date
 
-
-def valid_date(given_date):
-    try:
-        return datetime.datetime.strptime(given_date, "%Y-%m-%d")
-    except ValueError:
-        msg = "{0} is not a valid date.".format(given_date)
-        raise argparse.ArgumentTypeError(msg)
-
-
-def default_start_date():
-    try:
-        today: str = datetime.datetime.today()
-        return today.strftime("%Y-%m-%d")
-    except Exception as e:
-        msg = "Error creating default date"
-        raise argparse.ArgumentError(e, msg)
-
-
-def default_end_date():
-    try:
-        today: str = datetime.datetime.today() + datetime.timedelta(days=1)
-        return today.strftime("%Y-%m-%d")
-    except Exception as e:
-        msg = "Error creating default date"
-        raise argparse.ArgumentError(e, msg)
 
 
 def find_weekend(month):
@@ -56,7 +32,6 @@ def find_weekend(month):
         elif ind.weekday() == 6 and dates:
             dates.append(i)
 
-    print(dates)
     return dates
 
 
@@ -86,7 +61,8 @@ def get_booking_page(city, rooms, people, startdate, enddate, offset):
         "group_adults={people}&"
         "no_rooms={rooms}&"
         "group_children=0&"
-        "nflt=review_score%3D90&"
+        "nflt=review_score%3D90"
+        "privacy_type%3D3&=&=&=&"
         "offset={offset}"
         .format(
             city=city,
@@ -121,8 +97,7 @@ def prep_data(
     Prepare data for saving
     :return: pd.DataFrame
     """
-    print("ILEE", timeofstay)
-    print("prep_data", start_date, end_date)
+    print("prep_data", city, start_date, end_date)
     parsed_html = get_booking_page(
         city, rooms, people, start_date, end_date, offset
     )
@@ -136,12 +111,11 @@ def prep_data(
     offsets = [0]
     df_list = []
 
-    while (i+25 < count and i < 75):
+    while (i+25 < count and i < 25):
         i += 25
         offsets.append(i)
 
     for offset in offsets:
-        # scrapped_data = [[], [], []]
         print("offset:", offset)
         parsed_html = get_booking_page(
             city, rooms, people, start_date, end_date, offset
@@ -149,7 +123,6 @@ def prep_data(
 
         prices = parsed_html.find_all(
             "span", {"data-testid": "price-and-discounted-price"})
-
         prices_ = pd.Series(''.join(x for x in price.string if x.isdigit())
                             for price in prices)
 
@@ -162,7 +135,7 @@ def prep_data(
             "div",
             {"data-testid": "review-score"}))
 
-        data = {
+        data = pd.DataFrame({
             "Hotel": titles_,
             "Price": prices_,
             "Onenight Price": [int(x) // timeofstay for x in prices_],
@@ -173,14 +146,14 @@ def prep_data(
             "People": people,
             "Rooms": rooms,
             "Page": offset // 25 + 1
-        }
+        })
 
         # if len(scrapped_data[0]) > len(scrapped_data[2]):
         #     scrapped_data[2].append("9.0")
         # print(len(scrapped_data[1]), len(
         #     scrapped_data[0]), len(scrapped_data[2]))
-        data = pd.DataFrame(data)
-        print(data)
+        # data = pd.DataFrame(data)
+        # print(data)
         data["Grade"] = pd.to_numeric(data["Grade"], downcast="float")
         data["Price"] = pd.to_numeric(data["Price"], downcast="unsigned")
 
@@ -216,30 +189,28 @@ def get_data(
     print("Ilość nocy: ", timeofstay)
 
     if weekend:
-        datetime_series2 = pd.Series(find_weekend(month))
-        it = iter(datetime_series2)
-        datetime_series2 = pd.Series([*zip(it, it)])
-
-        print(datetime_series2)
-
-    elif month == 0:
-        datetime_series = pd.Series(
-            pd.date_range(start_date, periods=1, freq="M"))
-        print(datetime_series)
-        datetime_series2 = pd.Series(
-            pd.date_range(start_date,
-                          end=end_date,
-                          freq="{timeofstay}D".format(timeofstay=timeofstay)))
+        it = iter(pd.Series(find_weekend(month)))
+        nocleg_series = pd.Series([*zip(it, it)])
     elif month != 0:
-        datetime_series = pd.Series(
-            pd.date_range("2023-{month}-01".format(month=month), periods=1, freq="M"))
-        datetime_series2 = pd.Series(
-            pd.date_range("2023-{month}-01".format(month=month), end=datetime_series[0],
-                          freq="{timeofstay}D".format(timeofstay=timeofstay)))
+        start = "2023-{month}-01".format(month=month)
+        end = pd.Series(
+            pd.date_range(start, periods=1, freq="M"))[0]
+    elif month == 0:
+        start, end = start_date, end_date
+
+    nocleg_series = pd.Series(
+        pd.date_range(start,
+                      end=end,
+                      freq="{timeofstay}D".format(timeofstay=timeofstay)))
 
     list_of_dfs = []
+    # The reason we have double append(prep_data())
+    # is because in weekends we prep data by two:
+    # 01.07-03.07. -> 07.07-09.07.
+    # IN other scenarios we use shifting window by 1
+    # 01-07.-03.07. -> 03.07. -> 05.07.
     if weekend:
-        for elem in datetime_series2:
+        for elem in nocleg_series:
             start_date, end_date = elem[0], elem[1]
             list_of_dfs.append(prep_data(city=city, rooms=rooms, people=people,
                                          start_date=start_date,
@@ -247,8 +218,8 @@ def get_data(
                                          timeofstay=timeofstay,
                                          offset=0))
     else:
-        for i in range(1, len(datetime_series2)):
-            start_date, end_date = datetime_series2[i-1], datetime_series2[i]
+        for i in range(1, len(nocleg_series)):
+            start_date, end_date = nocleg_series[i-1], nocleg_series[i]
             list_of_dfs.append(prep_data(city=city, rooms=rooms, people=people,
                                          start_date=start_date,
                                          end_date=end_date,
@@ -257,11 +228,7 @@ def get_data(
 
     list_of_dfs = pd.concat(list_of_dfs, axis=0, ignore_index=True)
 
-    if save:
-        pd.DataFrame(list_of_dfs).to_excel(
-            calendar.month_name[month] + ".xlsx")
-    else:
-        print(list_of_dfs)
+    return list_of_dfs
 
 
 if __name__ == "__main__":

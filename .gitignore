@@ -1,3 +1,6 @@
 venv/
 *.xlsx
 *.json
+flask_test/
+__pycache__/
+.vscode/
