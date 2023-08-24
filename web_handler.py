@@ -9,18 +9,18 @@ import calendar
 from re import search
 from date_functions import valid_date, default_start_date, default_end_date
 from itertools import chain
+from numpy import arange
 
+BOOKING_PAGE_RESULTS = 25
 
+def find_weekend(month=1, year=datetime.datetime.now().year):
+    workday_1st, month_length = calendar.monthrange(year, month)
 
-def find_weekend(month):
-    _year = datetime.datetime.now().year
-    workday_1st, month_length = calendar.monthrange(_year, month)
-
-    days_to_1st_friday = 5 - workday_1st
+    days_to_1st_friday = workday_1st if workday_1st == 6 else 5 - workday_1st
 
     fridays = [day for day in range(days_to_1st_friday, month_length+1, 7)]
-    friday_dates = ["{year}-{month}-{day}".format(year=_year, month=month, day=day) for day in fridays]
-    week_end_dates = ["{year}-{month}-{day}".format(year=_year, month=month, day=(day if day + 2 > month_length else day + 2)) for day in fridays]
+    friday_dates = ["{year}-{month}-{day}".format(year=year, month=month, day=day) for day in fridays]
+    week_end_dates = ["{year}-{month}-{day}".format(year=year, month=month, day=(day if day + 2 > month_length else day + 2)) for day in fridays]
 
     return list(chain(*zip(friday_dates,week_end_dates)))
 
@@ -87,6 +87,8 @@ def prep_data(
     Prepare data for saving
     :return: pd.DataFrame
     """
+    df_list = []
+
     print("prep_data", city, start_date, end_date)
     parsed_html = get_booking_page(
         city, rooms, people, start_date, end_date, offset
@@ -95,15 +97,9 @@ def prep_data(
     pages = parsed_html.find_all(
         "div", {"data-testid": "pagination"})
     print(pages[0].previous_sibling.string)
-    count = int(search(r'\d+', pages[0].previous_sibling.string).group())
 
-    i = 0
-    offsets = [0]
-    df_list = []
-
-    while (i+25 < count and i < 25):
-        i += 25
-        offsets.append(i)
+    # count = int(search(r'\d+', pages[0].previous_sibling.string).group())
+    offsets = arange(0, 25, BOOKING_PAGE_RESULTS) # TODO: change 25 to count, turn on some debug mode or sth
 
     for offset in offsets:
         print("offset:", offset)
@@ -135,7 +131,7 @@ def prep_data(
             "Grade": scores_,
             "People": people,
             "Rooms": rooms,
-            "Page": offset // 25 + 1
+            "Page": offset // BOOKING_PAGE_RESULTS + 1
         })
 
         # if len(scrapped_data[0]) > len(scrapped_data[2]):
@@ -217,7 +213,6 @@ def get_data(
                                          offset=0))
 
     list_of_dfs = pd.concat(list_of_dfs, axis=0, ignore_index=True)
-
     return list_of_dfs
 
 
