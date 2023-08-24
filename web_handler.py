@@ -7,32 +7,22 @@ from bs4 import BeautifulSoup
 import pandas as pd
 import calendar
 from re import search
-from date_funcs import valid_date, default_start_date, default_end_date
+from date_functions import valid_date, default_start_date, default_end_date
+from itertools import chain
 
 
 
 def find_weekend(month):
+    _year = datetime.datetime.now().year
+    workday_1st, month_length = calendar.monthrange(_year, month)
 
-    dates = []
-    if month == 0:
-        start = str(default_start_date()).split(" ")[0]
-        end = "2023-09-30"
-    else:
-        start = "2023-0{month}-01".format(month=month),
-        end = "2023-0{month}-30".format(month=month)
-        start = "2023-07-01"
-        end = "2023-07-30"
+    days_to_1st_friday = 5 - workday_1st
 
-    for i in pd.date_range(
-            start=start,
-            end=end):
-        ind = i.to_pydatetime()
-        if ind.weekday() == 4:
-            dates.append(i)
-        elif ind.weekday() == 6 and dates:
-            dates.append(i)
+    fridays = [day for day in range(days_to_1st_friday, month_length+1, 7)]
+    friday_dates = ["{year}-{month}-{day}".format(year=_year, month=month, day=day) for day in fridays]
+    week_end_dates = ["{year}-{month}-{day}".format(year=_year, month=month, day=(day if day + 2 > month_length else day + 2)) for day in fridays]
 
-    return dates
+    return list(chain(*zip(friday_dates,week_end_dates)))
 
 
 def get_booking_page(city, rooms, people, startdate, enddate, offset):
