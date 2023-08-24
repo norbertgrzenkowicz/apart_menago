@@ -1,5 +1,5 @@
 from web_handler import get_data
-from date_funcs import valid_date, default_start_date, default_end_date
+from date_functions import default_start_date, default_end_date
 from sqlalchemy import create_engine, text
 
 from itertools import product
