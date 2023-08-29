@@ -3,8 +3,10 @@ from date_functions import default_start_date, default_end_date
 import threading
 from itertools import product
 import concurrent.futures
-import apart_menago.config as config
+import config as config
 import sql_parser
+import logging
+
 
 def compute_products(*args):
     return list(product(*[*args]))
@@ -29,7 +31,7 @@ class Interface:
         products = compute_products(self.reservation_input["city"], 
                          self.reservation_input["people"], 
                          self.reservation_input["timeofstay"])
-
+        logging.info("Amount of products: {length}".format(length=len(products)))
         with concurrent.futures.ThreadPoolExecutor(len(products)) as executor:
             _ = [executor.submit(self.scrapped_data.append, 
                                  get_data(reservation_products[0][0],
@@ -43,11 +45,9 @@ class Interface:
                                             self.reservation_input["save"], 
                                             self.reservation_input["weekend"])) 
                                             for reservation_products in products]
+        
+        return True if len(_) > 1 else False
 
 
 if __name__ == "__main__":
-    dupa = Interface()
-    dupa.scrap_data()
-    hehe = input("Write yes for sql save: ")
-    if hehe == "yes":
-        sql = sql_parser.SQL_parser(dupa.scrapped_data)
+    pass

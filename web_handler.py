@@ -10,7 +10,8 @@ from re import search
 from date_functions import valid_date, default_start_date, default_end_date
 from itertools import chain
 from numpy import arange
-import apart_menago.config as config
+import config as config
+import logging
 
 BOOKING_PAGE_RESULTS = 25
 
@@ -32,6 +33,7 @@ def get_booking_page(city, dest_id, rooms, people, startdate, enddate, offset):
     :param offset:
     :return: html page
     """
+    logging.debug("Scrapping booking.com with params: \n city: {city}, dest_id: {dest_id}, rooms: {rooms}, people: {people}, startdate: {startdate}, enddate: {enddate}, offset: {offset}".format(city=city, dest_id=dest_id, rooms=rooms, people=people, startdate=startdate, enddate=enddate, offset=offset))
     url: str = (
         "https://www.booking.com/searchresults.pl.html?"
         "ss={city}&"
@@ -46,9 +48,7 @@ def get_booking_page(city, dest_id, rooms, people, startdate, enddate, offset):
         "dest_id={dest_id}&"
         "dest_type=city&"
         "checkin={startdate}&"
-        # "checkin=2023-07-13&"
         "checkout={enddate}&"
-        # "checkout=2023-07-18&"
         "group_adults={people}&"
         "no_rooms={rooms}&"
         "group_children=0&"
@@ -92,20 +92,19 @@ def prep_data(
     """
     df_list = []
 
-    print("prep_data", city, start_date, end_date)
+    logging.info(f"Preparing data for {city} since {start_date} till {end_date}")
     parsed_html = get_booking_page(
         city, dest_id, rooms, people, start_date, end_date, offset
     )
 
     pages = parsed_html.find_all(
         "div", {"data-testid": "pagination"})
-    print(pages[0].previous_sibling.string)
 
-    count = int(search(r'\d+', pages[0].previous_sibling.string).group())
-    offsets = arange(0, count if count < config.MAX_OFFSET else config.MAX_OFFSET, BOOKING_PAGE_RESULTS)
+    # count = int(search(r'\d+', pages[0].previous_sibling.string).group())
+    offsets = arange(0, 25 if 25 < config.MAX_OFFSET else config.MAX_OFFSET, BOOKING_PAGE_RESULTS)
 
     for offset in offsets:
-        print("offset:", offset)
+        logging.debug("offset: {offset}".format(offset=offset))
         parsed_html = get_booking_page(
             city, dest_id, rooms, people, start_date, end_date, offset
         )
@@ -164,15 +163,17 @@ def get_data(
     """
     start_date = str(start_date).split(" ")[0]
     end_date = str(end_date).split(" ")[0]
-    print("Pokoje ze śniadaniami w ", city)
-    print("Liczba pokoi ", rooms)
-    print("Liczba osób dorosłych: ", people)
-    print("Od: ", start_date)
-    print("Do: ", end_date)
-    print("Miesiac: ", calendar.month_name[month])
-    print("Ilość nocy: ", timeofstay)
+
+    # logging.info("Pokoje ze śniadaniami w ", city[0])
+    # logging.info("Liczba pokoi: ", rooms)
+    # logging.info("Liczba osób dorosłych: ", people)
+    # logging.info("Od: ", start_date)
+    # logging.info("Do: ", end_date)
+    # logging.info("Miesiac: ", calendar.month_name[month])
+    # logging.info("Ilość nocy: ", timeofstay)
 
     if weekend:
+        logging.info("Scrapping only weekend dates...")
         it = iter(pd.Series(find_weekend(month)))
         nocleg_series = pd.Series([*zip(it, it)])
     elif month != 0:
@@ -213,4 +214,5 @@ def get_data(
                                          offset=0))
 
     list_of_dfs = pd.concat(list_of_dfs, axis=0, ignore_index=True)
+    logging.info("Gathering Data ended.")
     return list_of_dfs
