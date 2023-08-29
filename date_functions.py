@@ -1,6 +1,7 @@
 import datetime
 import argparse
 
+
 def valid_date(given_date):
     try:
         return datetime.datetime.strptime(given_date, "%Y-%m-%d")

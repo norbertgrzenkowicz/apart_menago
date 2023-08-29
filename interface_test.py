@@ -1,7 +1,6 @@
-import pytest
-import config
 import logging
-from apart_menago.interface import Interface
+from interface import Interface
+
 
 def test_interface(caplog):
     scrapper = Interface()
