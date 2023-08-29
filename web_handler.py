@@ -10,6 +10,7 @@ from re import search
 from date_functions import valid_date, default_start_date, default_end_date
 from itertools import chain
 from numpy import arange
+import apart_menago.config as config
 
 BOOKING_PAGE_RESULTS = 25
 
@@ -25,7 +26,7 @@ def find_weekend(month=1, year=datetime.datetime.now().year):
     return list(chain(*zip(friday_dates,week_end_dates)))
 
 
-def get_booking_page(city, rooms, people, startdate, enddate, offset):
+def get_booking_page(city, dest_id, rooms, people, startdate, enddate, offset):
     """
     Make request to booking page and parse html
     :param offset:
@@ -42,7 +43,7 @@ def get_booking_page(city, rooms, people, startdate, enddate, offset):
         "sb=1&"
         "src_elem=sb&"
         "src=searchresults&"
-        "dest_id=-535939&"
+        "dest_id={dest_id}&"
         "dest_type=city&"
         "checkin={startdate}&"
         # "checkin=2023-07-13&"
@@ -56,6 +57,7 @@ def get_booking_page(city, rooms, people, startdate, enddate, offset):
         "offset={offset}"
         .format(
             city=city,
+            dest_id=dest_id,
             people=people,
             rooms=rooms,
             startdate=str(startdate).split(" ")[0],
@@ -76,6 +78,7 @@ def get_booking_page(city, rooms, people, startdate, enddate, offset):
 
 def prep_data(
     city="W%C5%82adys%C5%82awowo",
+    dest_id=-535939,
     rooms=1,
     people=2,
     start_date=default_start_date(),
@@ -91,20 +94,20 @@ def prep_data(
 
     print("prep_data", city, start_date, end_date)
     parsed_html = get_booking_page(
-        city, rooms, people, start_date, end_date, offset
+        city, dest_id, rooms, people, start_date, end_date, offset
     )
 
     pages = parsed_html.find_all(
         "div", {"data-testid": "pagination"})
     print(pages[0].previous_sibling.string)
 
-    # count = int(search(r'\d+', pages[0].previous_sibling.string).group())
-    offsets = arange(0, 25, BOOKING_PAGE_RESULTS) # TODO: change 25 to count, turn on some debug mode or sth
+    count = int(search(r'\d+', pages[0].previous_sibling.string).group())
+    offsets = arange(0, count if count < config.MAX_OFFSET else config.MAX_OFFSET, BOOKING_PAGE_RESULTS)
 
     for offset in offsets:
         print("offset:", offset)
         parsed_html = get_booking_page(
-            city, rooms, people, start_date, end_date, offset
+            city, dest_id, rooms, people, start_date, end_date, offset
         )
 
         prices = parsed_html.find_all(
@@ -134,12 +137,6 @@ def prep_data(
             "Page": offset // BOOKING_PAGE_RESULTS + 1
         })
 
-        # if len(scrapped_data[0]) > len(scrapped_data[2]):
-        #     scrapped_data[2].append("9.0")
-        # print(len(scrapped_data[1]), len(
-        #     scrapped_data[0]), len(scrapped_data[2]))
-        # data = pd.DataFrame(data)
-        # print(data)
         data["Grade"] = pd.to_numeric(data["Grade"], downcast="float")
         data["Price"] = pd.to_numeric(data["Price"], downcast="unsigned")
 
@@ -151,6 +148,7 @@ def prep_data(
 
 def get_data(
     city="W%C5%82adys%C5%82awowo",
+    dest_id=-535939,
     rooms=1,
     people=2,
     start_date=default_start_date(),
@@ -198,7 +196,8 @@ def get_data(
     if weekend:
         for elem in nocleg_series:
             start_date, end_date = elem[0], elem[1]
-            list_of_dfs.append(prep_data(city=city, rooms=rooms, people=people,
+            list_of_dfs.append(prep_data(city=city, dest_id=dest_id, 
+                                         rooms=rooms, people=people,
                                          start_date=start_date,
                                          end_date=end_date,
                                          timeofstay=timeofstay,
@@ -206,7 +205,8 @@ def get_data(
     else:
         for i in range(1, len(nocleg_series)):
             start_date, end_date = nocleg_series[i-1], nocleg_series[i]
-            list_of_dfs.append(prep_data(city=city, rooms=rooms, people=people,
+            list_of_dfs.append(prep_data(city=city, dest_id=dest_id, 
+                                         rooms=rooms, people=people,
                                          start_date=start_date,
                                          end_date=end_date,
                                          timeofstay=timeofstay,
@@ -214,77 +214,3 @@ def get_data(
 
     list_of_dfs = pd.concat(list_of_dfs, axis=0, ignore_index=True)
     return list_of_dfs
-
-
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-
-    parser.add_argument(
-        "-c",
-        "--city",
-        help="Define name of the scrapped city.",
-        default="W%C5%82adys%C5%82awowo&",
-        type=str,
-        nargs="?",
-    )
-    parser.add_argument(
-        "-r",
-        "--rooms",
-        help="Add the number of rooms to the booking request.",
-        default=1,
-        type=int,
-        nargs="?",
-    )
-    parser.add_argument(
-        "-p",
-        "--people",
-        help="Add the number of people to the booking request.",
-        default=2,
-        type=int,
-        nargs="?",
-    )
-    parser.add_argument(
-        "-s",
-        "--startdate",
-        help="The start date for the booking (format: YYYY-MM-DD)",
-        default=default_start_date(),
-        type=valid_date,
-    )
-    parser.add_argument(
-        "-e",
-        "--enddate",
-        help="The end date for the booking (format: YYYY-MM-DD)",
-        default=default_end_date(),
-        type=valid_date,
-    )
-    parser.add_argument(
-        "-m",
-        "--month",
-        help="Month date for the booking",
-        default=0,
-        type=int,
-    )
-    parser.add_argument(
-        "-tos",
-        "--timeofstay",
-        help="Low many nights you want to stay",
-        default=2,
-        type=int,
-    )
-    parser.add_argument(
-        "--save",
-        help="Saves output to xlsx file",
-        default=False,
-        type=bool,
-    )
-    parser.add_argument(
-        "--weekend",
-        help="Output only weekend times",
-        default=False,
-        type=bool,
-    )
-    argcomplete.autocomplete(parser)
-    args = parser.parse_args()
-    get_data(args.city, args.rooms, args.people,
-             args.startdate, args.enddate, args.month, args.timeofstay, args.save,
-             args.weekend)
