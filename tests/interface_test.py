@@ -1,5 +1,5 @@
 import logging
-from interface import Interface
+from src.interface import Interface
 
 
 def test_interface(caplog):

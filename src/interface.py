@@ -1,9 +1,9 @@
-from web_handler import get_data
-from date_functions import default_start_date, default_end_date
+from src.web_handler import get_data
+from src.date_functions import default_start_date, default_end_date
 import threading
 from itertools import product
 import concurrent.futures
-import config as config
+import src.config as config
 import logging
 
 

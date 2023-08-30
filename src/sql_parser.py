@@ -1,6 +1,6 @@
 import datetime
 import calendar
-from sqlalchemy import create_engine, text
+from sqlalchemy import create_engine  # , text
 
 
 class SQL_parser:
