@@ -5,6 +5,7 @@ from itertools import product
 import concurrent.futures
 import src.config as config
 import logging
+from src.sql_parser import SQL_parser
 
 
 def compute_products(*args):
@@ -58,4 +59,6 @@ class Interface:
 
 
 if __name__ == "__main__":
-    pass
+    scrapper = Interface()
+    scrapper.scrap_data()
+    SQL_parser(scrapped_data=scrapper.scrapped_data)

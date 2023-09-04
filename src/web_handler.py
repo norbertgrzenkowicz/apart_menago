@@ -196,12 +196,18 @@ def get_data(
     # logging.info("Miesiac: ", calendar.month_name[month])
     # logging.info("Ilość nocy: ", timeofstay)
 
+    curr_month = datetime.datetime.now().month
+
+    assert curr_month <= month
+
     if weekend:
         logging.info("Scrapping only weekend dates...")
         it = iter(pd.Series(find_weekend(month)))
         nocleg_series = pd.Series([*zip(it, it)])
     elif month != 0:
-        start = "2023-{month}-01".format(month=month)
+        start = (
+            "2023-{month}-01".format(month=month) if month > curr_month else start_date
+        )
         end = pd.Series(pd.date_range(start, periods=1, freq="M"))[0]
     elif month == 0:
         start, end = start_date, end_date

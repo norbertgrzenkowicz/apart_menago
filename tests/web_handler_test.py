@@ -1,5 +1,6 @@
 from src.web_handler import prep_data, find_weekend, get_booking_page
 from src.date_functions import default_start_date, default_end_date
+from src.config import CITY
 
 
 def test_data_cols():
@@ -160,14 +161,17 @@ def test_find_weekends():
 
 
 def test_page_opening():
-    city = "W%C5%82adys%C5%82awowo"
+    city = CITY[0][0]
+    dest_id = CITY[0][1]
     rooms = 1
     people = 2
     start_date = default_start_date()
     end_date = default_end_date()
     offset = 0
 
-    parsed_html = get_booking_page(city, rooms, people, start_date, end_date, offset)
+    parsed_html = get_booking_page(
+        city, dest_id, rooms, people, start_date, end_date, offset
+    )
 
     pages = parsed_html.find_all("div", {"data-testid": "pagination"})
     assert "obiektów" in pages[0].previous_sibling.string
