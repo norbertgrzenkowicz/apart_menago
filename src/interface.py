@@ -61,4 +61,4 @@ class Interface:
 if __name__ == "__main__":
     scrapper = Interface()
     scrapper.scrap_data()
-    SQL_parser(scrapped_data=scrapper.scrapped_data)
+    SQL_parser().save_to_sql(scrapper.scrapped_data)
