@@ -5,6 +5,7 @@ from itertools import product
 import concurrent.futures
 import src.config as config
 import logging
+import datetime
 from src.sql_parser import SQL_parser
 
 
@@ -22,7 +23,7 @@ class Interface:
             "people": config.PEOPLE,
             "start_date": default_start_date(),
             "end_date": default_end_date(),
-            "month": config.MONTH,
+            "month": datetime.datetime.now().month,
             "timeofstay": config.TIMEOFSTAY,
             "save": False,
             "weekend": False,

@@ -28,5 +28,4 @@ class SQL_parser:
 
 
 if __name__ == "__main__":
-    sql = SQL_parser()
-    sql.sql_to_df()
+    SQL_parser().sql_to_df()
