@@ -26,11 +26,7 @@ These instructions will help you set up the project and start scraping apartment
 
 ### Installation
 
-1. Clone the repository:
-
-   ```bash
-   git clone https://github.com/yourusername/apart_menago.git
-   ```
+1. Clone the repository.
 
 2. Navigate to the project directory:
 
@@ -46,27 +42,19 @@ These instructions will help you set up the project and start scraping apartment
 
 ### Usage
 
-1. Configure your scraping preferences in the `config.yaml` file. You can specify search parameters, filters, and output options.
-
-2. Set up your PostgreSQL database by editing the `database.yaml` file with your database connection details.
-
-3. Configure email settings in the `email.yaml` file, including SMTP server details and email recipients.
-
-4. Run the scraper:
+   For now the best and only way to use script is to run a tests. Command below will do the work to run a scrapper through interface.py script.
 
    ```bash
-   python scrape.py
+   python -m pytest -s interface.py
    ```
 
-   The scraper will start collecting apartment data based on your preferences, store it in the PostgreSQL database, and generate a newsletter email with customized data analysis.
+   The scraper will start collecting apartment data based on your preferences, store it in the PostgreSQL database, and generate a newsletter email with customized data analysis (NOT IMPLEMENTED).
 
 5. Check your email for the generated newsletter.
 
 ## Configuration
 
-- `config.yaml`: Edit scraping preferences, locations, check-in/out dates, and more.
-- `database.yaml`: Configure PostgreSQL database connection details.
-- `email.yaml`: Set up email preferences, including SMTP server information and recipients.
+- `config.py`: Edit scraping preferences, locations, check-in/out dates, and more.
 
 ## License
 
