@@ -1,0 +1,3 @@
+[submodule "apart_menago_web"]
+	path = apart_menago_web
+	url = https://github.com/norbertgrzenkowicz/apart_menago_web
