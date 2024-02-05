@@ -1,7 +1,12 @@
+import sys
+import os
+
+sys.path.append("../src")
+
+import src.interface
 import logging
-from src.interface import Interface
 
 
 def test_interface(caplog):
     with caplog.at_level(logging.DEBUG):
-        assert Interface().scrap_data() is True
+        assert src.interface.Interface().scrap_data() is True

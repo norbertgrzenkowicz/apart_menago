@@ -1,10 +1,10 @@
-from src.web_handler import prep_data, find_weekend, get_booking_page
+import src.web_handler
 from src.date_functions import default_start_date, default_end_date
 from src.config import CITY
 
 
 def test_data_cols():
-    data = prep_data()
+    data = src.web_handler.WeekendWebHandler().prep_data()
     cols = [
         "Hotel",
         "Price",
@@ -157,7 +157,10 @@ def test_find_weekends():
         ],
     ]
     for i in range(1, 12):
-        assert find_weekend(i, 2023) == weekends_of_2023[i - 1]
+        assert (
+            src.web_handler.WeekendWebHandler().find_weekend(i, 2023)
+            == weekends_of_2023[i - 1]
+        )
 
 
 def test_page_opening():
@@ -169,7 +172,7 @@ def test_page_opening():
     end_date = default_end_date()
     offset = 0
 
-    parsed_html = get_booking_page(
+    parsed_html = src.web_handler.WeekendWebHandler().get_booking_page(
         city, dest_id, rooms, people, start_date, end_date, offset
     )
 

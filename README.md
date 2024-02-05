@@ -50,6 +50,14 @@ These instructions will help you set up the project and start scraping apartment
 
    The scraper will start collecting apartment data based on your preferences, store it in the PostgreSQL database, and generate a newsletter email with customized data analysis (NOT IMPLEMENTED).
 
+### Web menago Usage
+
+   ```bash
+   sudo /etc/init.d/postgresql restart
+   cd apart_menago_web
+   python manage.py runserver
+   ```
+
 5. Check your email for the generated newsletter.
 
 ## Configuration
