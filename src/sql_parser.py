@@ -15,13 +15,18 @@ class SQL_parser:
 
     def save_to_sql(self, scrapped_data, scrapped_month):
         table_name = (
-            calendar.month_name[scrapped_month].lower()
+            # calendar.month_name[scrapped_month].lower() # TODO: Do a proper function to save table_month
+            calendar.month_name[datetime.datetime.now().month].lower()
             + "_"
             + str(datetime.datetime.now().year)
         )
+        try:
+            for df in scrapped_data:
+                df.to_sql(table_name, con=self._engine, if_exists="append")
+        except ValueError:
+            return 1
 
-        for df in scrapped_data:
-            df.to_sql(table_name, con=self._engine, if_exists="append")
+        return 0
 
     def sql_to_csv(self):
         pd.read_sql_query(src.clients.DUPA_QUERY[0], con=self._engine).to_csv("out.csv")
