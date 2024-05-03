@@ -149,7 +149,7 @@ class webHandlerIface:
             )
 
             scores_ = pd.Series(
-                grade.next_element.string.replace(",", ".")
+                grade.next_element.next_element.string.replace(",", ".")
                 for grade in parsed_html.find_all(
                     "div", {"data-testid": "review-score"}
                 )
