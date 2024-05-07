@@ -1,6 +1,6 @@
 import smtplib
 from email.mime.text import MIMEText
-import config
+import email_credentials
 import logging
 
 
@@ -20,9 +20,9 @@ def send_email(subject, body, sender, recipients, password):
 
 if __name__ == "__main__":
     send_email(
-        config.EMAIL_SUBJECT,
-        config.EMAIL_BODY,
-        config.EMAIL_SENDER,
-        config.EMAIL_RECIPIENTS,
-        config.EMAIL_PASSWORD,
+        email_credentials.EMAIL_SUBJECT,
+        email_credentials.EMAIL_BODY,
+        email_credentials.EMAIL_SENDER,
+        email_credentials.EMAIL_RECIPIENTS,
+        email_credentials.EMAIL_PASSWORD,
     )
