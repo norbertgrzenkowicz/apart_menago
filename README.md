@@ -4,7 +4,7 @@
 ![License](https://img.shields.io/badge/license-MIT-green)
 
 apart_menago is a web scraping tool that gathers information about available apartments from Booking.com in the charming coastal towns of Władysławowo, Jastrzębia Góra, and Rozewie. This tool uses Beautiful Soup to scrape data, manipulates data with pandas, stores the data in PostgreSQL, and generates a customized newsletter email based on the specified client preferences.
-
+**Note that README is not accurate and working because its an ChatGPT prompt output. Further updates of README on final versions**
 ## Features
 
 - Scrape apartment data from Booking.com in Władysławowo, Jastrzębia Góra, and Rozewie using Beautiful Soup.
