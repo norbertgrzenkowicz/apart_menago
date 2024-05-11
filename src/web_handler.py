@@ -226,7 +226,7 @@ class WeekWebHandler(webHandlerIface):
                 if month > curr_month
                 else start_date
             )
-            end = pd.Series(pd.date_range(start, periods=1, freq="M"))[0]
+            end = pd.Series(pd.date_range(start, periods=1, freq="ME"))[0]
         elif month == 0:
             start, end = start_date, end_date
 
