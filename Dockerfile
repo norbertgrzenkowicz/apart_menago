@@ -1,4 +1,4 @@
-FROM python:3.9
+FROM python:3.12
 WORKDIR /app
 COPY . /app
 COPY requirements.txt /app/
@@ -9,4 +9,4 @@ EXPOSE 80
 ENV NAME APART_MENAGO
 
 # Run app.py when the container launches
-CMD ["python", "-m ", "src.interface"]
+# CMD ["python", "-m ", "src.interface"]

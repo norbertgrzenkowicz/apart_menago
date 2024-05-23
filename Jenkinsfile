@@ -1,10 +1,22 @@
-/* Requires the Docker Pipeline plugin */
 pipeline {
-    agent { docker { image 'python:3.12.1-alpine3.19' } }
+    agent { 
+        dockerfile true
+      }
+    // triggers {
+    //     pollSCM 'H * * * *'
+    // }
     stages {
-        stage('build') {
+        // stage('Install Python Packages') {
+        //     steps {
+        //         sh 'echo "KURWAAAAAAA"'
+        //     }
+        // }
+
+        stage('Run Application') {
             steps {
-                sh 'python --version'
+                sh 'python3 --version'
+                sh 'ls'
+                sh 'python -m pytest -s tests/interface_test.py'
             }
         }
     }
