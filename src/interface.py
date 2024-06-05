@@ -37,7 +37,7 @@ class Interface:
         self.scrapped_data = []
         self._lock = threading.Lock()
         self.reservation_input = {
-            "city": city,
+            "city": config.CITY,
             "rooms": rooms,
             "people": people,
             "start_date": start_date,

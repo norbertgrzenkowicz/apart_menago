@@ -6,3 +6,4 @@ __pycache__/
 .vscode/
 .pytest_cache
 email_credentials.py
+.github/workflows/ci.yml

@@ -21,8 +21,8 @@ def default_start_date():
 
 def default_end_date():
     try:
-        today: str = datetime.datetime.today() + datetime.timedelta(days=1)
-        return today.strftime("%Y-%m-%d")
+        three_months_from_today: str = datetime.datetime.today() + datetime.timedelta(days=93) #TODO: hardcode of 3 months
+        return three_months_from_today.strftime("%Y-%m-%d")
     except Exception as e:
         msg = "Error creating default date"
         raise argparse.ArgumentError(e, msg)

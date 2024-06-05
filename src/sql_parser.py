@@ -9,14 +9,15 @@ class SQL_parser:
     def __init__(self) -> None:
         _password = input("Postgres Password: ")
         self._engine = create_engine(
-            f"postgresql+psycopg://postgres:{_password}@localhost:5432/test?",
+            f"postgresql+psycopg://postgres:{_password}@localhost:5432/apart_menago_db?",
             echo=False,
         )
 
     def save_to_sql(self, scrapped_data, scrapped_month):
         table_name = (
             # calendar.month_name[scrapped_month].lower() # TODO: Do a proper function to save table_month
-            calendar.month_name[datetime.datetime.now().month].lower()
+            str(datetime.datetime.now().day)
+            + calendar.month_name[datetime.datetime.now().month].lower()
             + "_"
             + str(datetime.datetime.now().year)
         )
@@ -33,4 +34,4 @@ class SQL_parser:
 
 
 if __name__ == "__main__":
-    SQL_parser().sql_to_df()
+    SQL_parser().save_to_sql()
