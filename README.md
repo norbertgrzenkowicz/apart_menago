@@ -36,8 +36,7 @@ These instructions will help you set up the project and start scraping apartment
    ```
    Open up a https://localhost:5000 and admire the results.
 
-### Tests
-
+### Tests & Running
    If u install locally with a venv:
    ```bash
    python3 -m venv venv && source venv/bin/activate
@@ -46,17 +45,18 @@ These instructions will help you set up the project and start scraping apartment
    ```bash
    python -m pytest -s src/interface.py
    ```
-### Running
-   With local set up u can run:
+   With local setup u can run:
    ```bash
    python -m src.interface --help
    ```
    To see what possible args you can use.
+   
    If u run:
    ```bash
    python -m src.interface
    ```
    You'll get default values for scrapping data configuration.
+   
    Potentially it can look like this:
    ```bash
    python -m src.interface --city Wladyslawowo --start_date=2024-08-01 --end_date=2024-08-05 --people=4 --rooms=1 --timeofstay=4
@@ -64,7 +64,7 @@ These instructions will help you set up the project and start scraping apartment
    Make sure to have correct (not in the past) data in Y-M-D format.
 
 
-5. Check your email for the generated newsletter.
+### Emails.
    I think it's good idea to send this data directly on email in csv/xml/xslx form so thats a TODO. Possibility to send emails are in code already.
 ## Disclaimer
 
