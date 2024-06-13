@@ -21,7 +21,9 @@ def default_start_date():
 
 def default_end_date():
     try:
-        three_months_from_today: str = datetime.datetime.today() + datetime.timedelta(days=93) #TODO: hardcode of 3 months
+        three_months_from_today: str = datetime.datetime.today() + datetime.timedelta(days=7) #TODO: hardcode of 3 months
+        # today: str = datetime.datetime.today() + datetime.timedelta(days=1) #TODO: it disables web_handler_test :DDD
+        # return today.strftime("%Y-%m-%d")
         return three_months_from_today.strftime("%Y-%m-%d")
     except Exception as e:
         msg = "Error creating default date"

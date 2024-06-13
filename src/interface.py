@@ -28,8 +28,8 @@ class Interface:
         people: list = config.PEOPLE,
         start_date=default_start_date(),
         end_date=default_end_date(),
-        month=datetime.datetime.now().month,
-        timeofstay=config.TIMEOFSTAY,
+        month: int =datetime.datetime.now().month,
+        timeofstay: list =config.TIMEOFSTAY,
         save=False,
         weekend=False,
     ):
