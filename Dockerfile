@@ -4,9 +4,9 @@ COPY . /app
 COPY requirements.txt /app/
 RUN pip install --no-cache-dir -r requirements.txt
 
-EXPOSE 80
+EXPOSE 5000
 
 ENV NAME APART_MENAGO
 
 # Run app.py when the container launches
-# CMD ["python", "-m ", "src.interface"]
+CMD [ "python3", "-m" , "flask", "run", "--host=0.0.0.0"]
